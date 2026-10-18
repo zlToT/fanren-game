@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="./assets/favicon-DXglsDQT.ico" type="image/x-icon">
+  <title>凡人·秘境苟道【关卡版】</title>
+  <script type="module" crossorigin src="./assets/index-Bgvw_Hkp.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-KsEGioxV.css">
+</head>
+
+<body>
+  <canvas id="firefly-bg"></canvas>
+  <div id="gameCanvas"></div>
+  <div id="ui" style="display:none">
+    <div id="hpTxt">血量 150/150</div>
+    <div class="bar">
+      <div id="hpBar" class="fill"></div>
+    </div>
+    <div id="expTxt">等级 1·经验</div>
+    <div class="bar exp">
+      <div id="expBar" class="fill"></div>
+    </div>
+    <div id="thunderTxt">雷源 0%</div>
+    <div class="bar thunder">
+      <div id="thunderBar" class="fill"></div>
+    </div>
+    <div id="uiStats"></div>
+  </div>
+  <div id="statsPanel" style="display:none"></div>
+  <div id="skillInfo"></div>
+  <div id="godBadge">👁 无敌模式</div>
+  <div id="dashBadge">💨 瞬身无敌</div>
+
+  <div id="menu">
+    <h1>凡人 · 秘境苟道</h1>
+    <div class="subtitle">— 一把青元剑，苟过九重天 —</div>
+    <div class="howto">
+      <b>操作</b>：WASD/方向键移动 ｜ <b>空格</b> 瞬身（无敌2秒） ｜ <b>Q</b> 切换剑式 ｜ <b>E</b> 辟邪神雷<br>
+      飞剑自动护主：护身 / 追击 / 分组追击三种剑式。原地7秒进入隐匿（全局暂停）。<br>
+      <span class="tip1">【九霄神雷、辟邪神雷】对魔修造成 50% 额外伤害</span><br>
+      <span class="tip2">【噬金虫】全屏追噬，接触造成伤害</span><br>
+      击杀积攒<b>雷源</b>，满了可以释放辟邪神雷清屏。击败首领即可通关！
+    </div>
+    <div id="levelBox"></div>
+  </div>
+
+  <div id="upgradePanel">
+    <div id="upgradeOpts"></div>
+  </div>
+
+  <button class="m-btn" id="btnDash" style="display:none">闪避<span class="key">空格</span>
+    <div class="cd"></div>
+  </button>
+  <button class="m-btn" id="btnStance" style="display:none">剑式<span class="key">Q</span>
+    <div class="cd"></div>
+  </button>
+  <button class="m-btn" id="btnThunder" style="display:none">神雷<span class="key">E</span>
+    <div class="cd"></div>
+  </button>
+
+  <div id="tip" style="display:none">PC：WASD移动｜空格=瞬身｜Q=切换剑式｜E=辟邪神雷｜按`打开Debug</div>
+  <div id="toast"></div>
+  <div id="damageFlash"></div>
+
+  <button id="btnBack" style="display:none">🏠 返回主页</button>
+  <button id="debugBtn" style="display:none">🛠 Debug（按键）</button>
+  <div id="debugPanel"></div>
+
+</body>
+
+</html>
