@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read(//**)",
+      "Edit(js/**)",
+      "Edit(docs/**)",
+      "Edit(.claude/**)",
+      "Write(js/**)",
+      "Write(docs/**)",
+      "Write(.claude/**)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run preview:*)",
+      "Bash(npm install:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Bash(npm run deploy:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)",
+      "Edit(vite.config.js)",
+      "Edit(dist/**)",
+      "Write(dist/**)"
+    ]
+  },
+  "env": {
+    "FANREN_PROJECT_ROOT": "D:\\Work\\site\\fanren-game"
+  }
+}

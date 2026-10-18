@@ -1,0 +1,496 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #081410;
+    font-family: system-ui
+}
+
+#firefly-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#gameCanvas {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    display: block;
+    touch-action: none;
+}
+
+#ui {
+    position: fixed;
+    z-index: 3;
+    color: #fff;
+    padding: 10px;
+    text-shadow: 0 0 4px #000;
+    left: 0;
+    top: 0;
+    font-size: 14px;
+    pointer-events: none
+}
+
+#ui .bar {
+    width: 160px;
+    height: 12px;
+    background: #333;
+    border: 1px solid #777;
+    border-radius: 6px;
+    margin: 3px 0;
+    overflow: hidden
+}
+
+#ui .bar .fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3fae5a, #8cf0aa);
+    transition: width .2s
+}
+
+#ui .bar.exp .fill {
+    background: linear-gradient(90deg, #2b6cb0, #7cf0ff)
+}
+
+#ui .bar.thunder .fill {
+    background: linear-gradient(90deg, #b08cff, #eeff88);
+}
+
+#uiStats {
+    margin-top: 6px;
+    color: #9fe;
+    font-size: 12px;
+    line-height: 1.5
+}
+
+#statsPanel {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    z-index: 3;
+    color: #cde;
+    font-size: 12px;
+    text-align: right;
+    line-height: 1.6;
+    pointer-events: none;
+    text-shadow: 0 0 4px #000
+}
+
+#skillInfo {
+    position: fixed;
+    right: 12px;
+    top: 42%;
+    z-index: 9;
+    max-width: 240px;
+    padding: 10px 14px;
+    background: rgba(40, 0, 10, 0.85);
+    border: 1px solid #ff5566;
+    border-radius: 10px;
+    color: #ffdddd;
+    font-size: 13px;
+    line-height: 1.5;
+    text-shadow: 0 0 4px #000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s;
+}
+
+#skillInfo .sk-name {
+    color: #ff6677;
+    font-weight: bold;
+    font-size: 15px
+}
+
+#godBadge {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9;
+    color: #ff5555;
+    font-weight: bold;
+    text-shadow: 0 0 6px #000;
+    pointer-events: none;
+    font-size: 18px
+}
+
+#dashBadge {
+    display: none;
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9;
+    color: #7cf0ff;
+    font-weight: bold;
+    text-shadow: 0 0 8px #07c;
+    pointer-events: none;
+    font-size: 16px
+}
+
+#menu {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: radial-gradient(ellipse at center, rgba(10, 30, 18, 0.9), rgba(3, 10, 6, 0.97));
+    overflow-y: auto;
+    padding: 20px 10px;
+}
+
+#menu h1 {
+    margin-top: 8vh;
+    color: #ffe9a8;
+    font-size: 42px;
+    letter-spacing: 8px;
+    text-shadow: 0 0 24px rgba(255, 220, 120, .5), 0 2px 4px #000;
+}
+
+#menu .subtitle {
+    color: #9fe;
+    margin-top: 8px;
+    letter-spacing: 4px;
+    font-size: 15px
+}
+
+#menu .howto {
+    margin-top: 18px;
+    color: #cde;
+    font-size: 13px;
+    line-height: 1.9;
+    text-align: center;
+    background: rgba(0, 20, 10, .5);
+    border: 1px solid #3a6b50;
+    border-radius: 10px;
+    padding: 12px 20px;
+    max-width: 560px;
+}
+
+#menu .howto b {
+    color: #ffd766
+}
+
+#menu .howto .tip1 {
+    color: #b08cff
+}
+
+#menu .howto .tip2 {
+    color: #ffcc66
+}
+
+#levelBox {
+    margin-top: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(560px, 92vw)
+}
+
+.level-btn {
+    padding: 12px 18px;
+    text-align: left;
+    cursor: pointer;
+    background: rgba(20, 45, 30, .8);
+    border: 1px solid #4a8a60;
+    border-radius: 10px;
+    color: #fff;
+    transition: all .15s;
+}
+
+.level-btn:hover {
+    background: rgba(40, 80, 50, .9);
+    border-color: #8cf0aa;
+    transform: translateX(6px)
+}
+
+.level-btn .lv-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffe9a8
+}
+
+.level-btn .lv-info {
+    font-size: 12px;
+    color: #bcd;
+    margin-top: 4px
+}
+
+.level-btn .lv-boss {
+    color: #ff8899
+}
+
+#upgradePanel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: rgba(0, 10, 6, 0.92);
+    padding: 24px;
+    border-radius: 12px;
+    display: none;
+    text-align: center;
+    color: #fff;
+    border: 1px solid #6fa886;
+    box-shadow: 0 0 40px rgba(120, 255, 170, 0.2);
+    max-width: 92vw;
+    max-height: 86vh;
+    overflow-y: auto
+}
+
+#upgradePanel h3 {
+    margin-bottom: 16px;
+    color: #8cf0aa;
+    text-shadow: 0 0 8px rgba(140, 240, 170, .6)
+}
+
+.upgrade-btn {
+    display: block;
+    width: 280px;
+    margin: 10px auto;
+    padding: 12px;
+    background: #284b38;
+    border: 1px solid #6fa886;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s
+}
+
+.upgrade-btn:hover {
+    background: #3a6b50;
+    transform: translateX(4px);
+    border-color: #8cf0aa
+}
+
+.upgrade-btn .desc {
+    display: block;
+    font-size: 12px;
+    color: #bcd;
+    margin-top: 3px
+}
+
+.upgrade-btn.evolution-btn {
+    background: #4b2838;
+    border-color: #a86f8f;
+    width: 320px
+}
+
+.upgrade-btn.evolution-btn:hover {
+    background: #6b3a50;
+    border-color: #f08cf0
+}
+
+.upgrade-btn .evolve-tag {
+    color: #f08cf0;
+    font-weight: bold
+}
+
+.m-btn {
+    overflow: hidden;
+    position: fixed;
+    z-index: 8;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid #7cf0ff;
+    background: rgba(20, 60, 80, 0.55);
+    color: #cff;
+    font-size: 13px;
+    font-weight: bold;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.m-btn .key {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #fff;
+    background: rgba(0, 0, 0, .5);
+    padding: 1px 5px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.m-btn .cd {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(20, 20, 30, .75);
+    pointer-events: none;
+    height: 0%;
+    transition: height 0.1s linear;
+}
+
+#btnDash {
+    right: 24px;
+    bottom: 160px;
+    border-color: #ffd766;
+    color: #ffd;
+    background: rgba(80, 60, 20, 0.55);
+}
+
+#btnStance {
+    right: 100px;
+    bottom: 95px;
+}
+
+#btnThunder {
+    right: 24px;
+    bottom: 30px;
+    border-color: #eeff88;
+    color: #ffe;
+    background: rgba(60, 50, 90, 0.55);
+}
+
+.m-btn:active {
+    filter: brightness(1.6);
+}
+
+#tip {
+    position: fixed;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #888;
+    z-index: 3;
+    font-size: 12px;
+    pointer-events: none
+}
+
+#toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9;
+    color: #ffdd66;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 8px #000;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none
+}
+
+#damageFlash {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(255, 0, 40, 0.35));
+    opacity: 0;
+    transition: opacity .2s
+}
+
+#debugBtn {
+    position: fixed;
+    left: 10px;
+    bottom: 30px;
+    z-index: 8;
+    background: rgba(40, 40, 60, 0.8);
+    border: 1px solid #888;
+    color: #ffd;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px
+}
+
+#debugPanel {
+    position: fixed;
+    left: 10px;
+    bottom: 60px;
+    z-index: 20;
+    width: 360px;
+    max-height: 72vh;
+    overflow-y: auto;
+    background: rgba(10, 10, 25, 0.95);
+    border: 1px solid #7f7fd0;
+    border-radius: 10px;
+    padding: 12px;
+    color: #dde;
+    display: none;
+    font-size: 12px
+}
+
+#debugPanel h4 {
+    color: #aaf;
+    margin: 8px 0 4px;
+    font-size: 13px;
+    border-bottom: 1px solid #445;
+    padding-bottom: 2px
+}
+
+#debugPanel .dbtn {
+    display: inline-block;
+    margin: 3px;
+    padding: 5px 8px;
+    background: #2a2a4a;
+    border: 1px solid #6666aa;
+    border-radius: 5px;
+    color: #ddf;
+    cursor: pointer;
+    font-size: 11px
+}
+
+#debugPanel .dbtn:hover {
+    background: #44448a
+}
+
+#debugPanel .godOn {
+    background: #aa2222 !important;
+    border-color: #ff6666 !important
+}
+
+#debugPanel input {
+    width: 52px;
+    background: #111;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 2px 4px;
+    border-radius: 4px
+}
+
+#debugPanel .row {
+    margin: 4px 0
+}
+
+#btnBack {
+    position: fixed;
+    left: 10px;
+    bottom: 60px;
+    z-index: 8;
+    background: rgba(40, 40, 60, .8);
+    border: 1px solid #888;
+    color: #ffd;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: none;
+}

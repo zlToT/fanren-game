@@ -1,0 +1,21 @@
+{
+  "name": "fanren",
+  "version": "1.0.0",
+  "description": "凡人修仙传 - 吸血鬼幸存者like网页游戏",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && xcopy /E /I /Y dist\\* ..\\zlToT.github.io-site\\public\\games\\fanren\\"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pixi.js": "^7.4.2"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}
