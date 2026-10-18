@@ -1,3 +1,7 @@
 ﻿node_modules/
 dist/
 .DS_Store
+
+原画imgs/
+prompt/
+test.txt
