@@ -7,11 +7,13 @@
 
 import * as PIXI from 'pixi.js';
 import { app, setApp, game, gameStarted, setGameStarted, curLevel, setCurLevel, IMG_TEX, setIMG_READY, IMG_READY, keys, playerGfx, setPlayerGfx, playerHpBar, setPlayerHpBar, dashRing, setDashRing, stealthRing, setStealthRing, charTex, setCharTex, charReady, setCharReady, playerDir, setPlayerDirState, ui, setUI, mxGlobal, myGlobal, setMove, audioCtx, audioBuffers } from './state.js';
-import { LEVELS, THEMES, STANCE_NAMES } from './config.js';
+import { LEVELS, THEMES, STANCE_NAMES, MAX_ELITE_NUM } from './config.js';
 import { initAudio, playSound, playFile, playBgm, playLevelBgm, tryStartBGM } from './audio.js';
 import { initBackground, setTheme, resizeBg } from './background.js';
 import { initBgImage, setBgTheme, showMenuBg } from './bg-image.js';
 import { burst, updateShake } from './fx.js';
+import { loadFxSpritesheet, updateFxSprites, playFx, playFxByTarget } from './sprite-fx.js';
+import { fx_config } from './const.js';
 import { Sword, Bug, Lightning, Orbit, updateArcTriggers, findRandomEnemy } from './weapons.js';
 import { spawnEnemy, releaseOrb, startPoolWarmup, tickPoolWarmup, makeSpecialElite, pickType, getWave } from './enemy.js';
 import { BloodCloud, Shockwave, HomingOrb, CrescentBlade, LightningBolt, FullBeam, GoldenChain, FireWave, GiantHand } from './projectiles.js';
@@ -126,7 +128,7 @@ async function boot() {
     pg.removeChildren();
     const spr = new PIXI.Sprite(charTex.down);
     spr.anchor.set(0.5);
-    spr.width = 40; spr.height = 40;
+    spr.width = 60; spr.height = 60;
     pg.addChild(spr);
     pg._spr = spr;
   } catch (e) { }
@@ -147,6 +149,7 @@ async function boot() {
   initBackground();
   initBgImage();
   showMenuBg();
+  loadFxSpritesheet(fx_config);
   setupDBG();
   initInput();
   initAIAssistant();
@@ -294,6 +297,7 @@ function _loopBody(dt) {
   // ★ 玩家移动/计时器/视觉同步（统一走 Player 类）
   player.update(dt, mx, my, m);
   drawPlayerBuffBar();
+  updateFxSprites();
   const _dashActive = hasBuff(game, 'dashInvuln');
   if (_lastDashActive !== _dashActive) {
     _lastDashActive = _dashActive;
@@ -414,6 +418,7 @@ function _loopBody(dt) {
       const heal = calcHealAmount(curLevel?.dur || 780, game.time);
       game.hp = Math.min(game.maxHp, game.hp + heal);
       toast(`💚 +${heal} 生命`);
+      playFxByTarget('heal', game.player);
       app.stage.removeChild(p.g);
       return false;
     }
@@ -440,7 +445,7 @@ function _loopBody(dt) {
         // 精英同屏最多 10 个
         if (type === 'elite' || type.startsWith('elite_')) {
           const eliteCount = game.enemies.filter(e => !e.dead && (e.type === 'elite' || e.type?.startsWith('elite_') || e.isSpecialElite)).length;
-          if (eliteCount >= 15) return;
+          if (eliteCount >= MAX_ELITE_NUM) return;
         }
         game.enemies.push(spawnEnemy(type));
       }
@@ -448,7 +453,7 @@ function _loopBody(dt) {
     // Special elites 只在 mid/late 刷（已过 22% 之后）
     if (game.time < curLevel.dur * 0.78 && Math.random() < 0.002) {
       const eliteCount = game.enemies.filter(e => !e.dead && (e.type === 'elite' || e.type?.startsWith('elite_') || e.isSpecialElite)).length;
-      if (eliteCount < 15) game.enemies.push(makeSpecialElite());
+      if (eliteCount < MAX_ELITE_NUM) game.enemies.push(makeSpecialElite());
     }
   }
 
@@ -464,11 +469,15 @@ function _loopBody(dt) {
     playSound('levelup');
     game.upgradePending = (game.upgradePending || 0) + 1;
     if (!game.paused) {
-      if (game.debug.silent) autoUpgrade();
-      else {
+      if (game.debug.silent) {
+        playFxByTarget('levelup', game.player, 1, autoUpgrade);
+      } else {
         const pool = getUpgradePool();
-        if (pool.length > 0) setTimeout(() => showUpgrade(pool), 200);
-        else autoUpgrade();
+        if (pool.length > 0) {
+          playFxByTarget('levelup', game.player, 1, () => showUpgrade(pool));
+        } else {
+          playFxByTarget('levelup', game.player, 1, autoUpgrade);
+        }
       }
     }
   }
@@ -504,7 +513,7 @@ function renderHUD() {
   const ss = Math.floor(Math.max(0, game.time)) % 60;
   if (ui.hpTxt) ui.hpTxt.textContent = `血量 ${Math.ceil(game.hp)}/${game.maxHp}`;
   if (ui.expTxt) ui.expTxt.textContent = `等级 ${game.lv} · 经验`;
-  if (ui.thunderTxt) ui.thunderTxt.textContent = `雷源 ${Math.floor(game.thunderCharge)}%${game.thunderCD > 0 ? `（CD ${(game.thunderCD/1000).toFixed(1)}s）` : ''}`;
+  if (ui.thunderTxt) ui.thunderTxt.textContent = `雷源 ${Math.floor(game.thunderCharge)}%${game.thunderCD > 0 ? `（CD ${(game.thunderCD / 1000).toFixed(1)}s）` : ''}`;
   ui.uiStats.innerHTML = `${curLevel.name} ｜ ⏱ ${mm}:${ss.toString().padStart(2, '0')} ｜ 击杀 ${game.kills} ｜ 总伤害 ${Math.floor(game.dmgDealt)}<br>${STANCE_NAMES[game.swordStance]}`;
 
   if (dashCd) dashCd.style.height = (game.dashCD > 0 ? Math.min(100, game.dashCD / (game.dashCDMax || 8000) * 100) : 0) + '%';

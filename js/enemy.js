@@ -440,7 +440,7 @@ export class Enemy {
       }
       this.touchTimer -= dt;
       const touchDmg = calcMonsterTouchDmg(this.dmg, this.dmgBuff, this.cloneBuff || 1);
-      if (d < this.r + 14 && this.touchTimer <= 0) {
+      if (d < this.r + 20 && this.touchTimer <= 0) {
         this.touchTimer = 600; // 怪物自身攻击间隔：打你一下后0.6秒内不能再打你
         playerHurt(touchDmg);
       }

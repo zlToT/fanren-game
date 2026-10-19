@@ -90,6 +90,7 @@ export const game = {
   projectiles: [],      // 敌方弹幕
   damageTexts: [],      // 飘字
   particles: [],        // 粒子
+  fxSprites: [],        // 序列帧特效
   clouds: [],           // Boss1 血云雾
   shockwaves: [],       // Boss2 冲击波
   homingOrbs: [],       // Boss3 追踪魔球

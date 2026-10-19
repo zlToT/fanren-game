@@ -133,6 +133,10 @@ export function playerHurt(dmg, ignoreHitInvuln = false) {
   game.hp -= dmg;
   game.hitFlash = 1;
   playHitSound();
+  // 受击特效（跟随人物）
+  import('./sprite-fx.js').then(({ playFxByTarget }) => {
+    playFxByTarget('hit', game.player);
+  });
 }
 
 // 辟邪神雷：8道闪电从空中劈下

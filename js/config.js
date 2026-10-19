@@ -158,6 +158,10 @@ export const ENEMY_STATS = {
   boss5: { name: '真仙马良', hp: 2500000, spd: 1.2, r: 32, dmg: 200, color: 0xd0a030, exp: 4000, behavior: 'boss5', faction: 'xian', bname: '真仙马良' },
 };
 
+// 精英怪最多同屏数量
+export const MAX_ELITE_NUM = 15
+
+
 
 // ===== 弹幕/对象池常量 =====
 // 同屏弹幕上限
