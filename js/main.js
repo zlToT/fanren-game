@@ -13,7 +13,7 @@ import { initBackground, setTheme, resizeBg } from './background.js';
 import { initBgImage, setBgTheme, showMenuBg } from './bg-image.js';
 import { burst, updateShake } from './fx.js';
 import { loadFxSpritesheet, updateFxSprites, playFx, playFxByTarget } from './sprite-fx.js';
-import { fx_config } from './const.js';
+import { FX_CONFIG } from './const.js';
 import { Sword, Bug, Lightning, Orbit, updateArcTriggers, findRandomEnemy } from './weapons.js';
 import { spawnEnemy, releaseOrb, startPoolWarmup, tickPoolWarmup, makeSpecialElite, pickType, getWave } from './enemy.js';
 import { BloodCloud, Shockwave, HomingOrb, CrescentBlade, LightningBolt, FullBeam, GoldenChain, FireWave, GiantHand } from './projectiles.js';
@@ -149,7 +149,7 @@ async function boot() {
   initBackground();
   initBgImage();
   showMenuBg();
-  loadFxSpritesheet(fx_config);
+  loadFxSpritesheet(FX_CONFIG);
   setupDBG();
   initInput();
   initAIAssistant();

@@ -10,6 +10,7 @@ import { playSound } from './audio.js';
 import { spawnEnemy, spawnPickup } from './enemy.js';
 import { hasBuff, addPlayerBuff, removeBuff } from './buff.js';
 import { calcLevelUpBonus, calcHealAmount } from './calculate.js';
+import { GAME_STATUS_LATE } from './const.js'
 
 let toastTimer = null;
 export function toast(msg) {
@@ -116,10 +117,11 @@ export function getUpgradePool() {
   }
   // 疗伤丹
   opts.push({ kind: 'heal', name: '疗伤丹', desc: '回复50点气血', icon: '💊' });
-  // 进化选项固定排最前，其余洗牌，总共最多5个
+  // 进化选项固定排最前，其余洗牌，有进化的就是5个，无则4个
   const evo = opts.filter(o => o.kind === 'evolution');
   const rest = shuffle(opts.filter(o => o.kind !== 'evolution'));
-  return [...evo, ...rest].slice(0, 5);
+  return evo.concat([...rest].slice(0, 4))
+  // return [...evo, ...rest].slice(0, 5);
 }
 
 function shuffle(a) {
@@ -133,6 +135,10 @@ function shuffle(a) {
 export function getEvolutionOptions() {
   const opts = [];
   if (!curLevel.evolve) return opts;
+  // 增加限制，后期刷
+  if (game._lastPhase != GAME_STATUS_LATE) return []
+  // 增加限制，50%概率出现
+  if (Math.random() < 0.5) return []
   for (const w in game.weapons) {
     const wd = game.weapons[w];
     if (wd.evolved) continue;

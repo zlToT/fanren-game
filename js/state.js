@@ -25,6 +25,7 @@ export const game = {
   idleTime: 0,          // 站桩时长（挂机检测）
   kills: 0,             // 击杀数
   dmgDealt: 0,          // 总伤害统计
+  _lastPhase: '',       // 游戏阶段
 
   // ===== 玩家位置与移动 =====
   player: { x: 0, y: 0, speed: 2.6 }, // 玩家坐标 + 基础移速
