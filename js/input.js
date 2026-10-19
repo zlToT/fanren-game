@@ -99,6 +99,7 @@ export function castThunder() {
 export function initInput() {
   addEventListener('keydown', e => {
     if (game.over) return;
+    if (game.__aiFocus) return; // AI 输入框聚焦时屏蔽
     keys[e.code] = true;
     if (e.code === 'Space') { tryDash(); e.preventDefault(); }
     if (e.code === 'KeyQ') cycleStance();

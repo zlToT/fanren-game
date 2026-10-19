@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-10-19 AI 攻略助手流式响应有数据但界面空白，且历史越刷越多
+
+**现象**：点发送后控制台一直打印"收到片段: 'xxx'"，SSE 流正常返回了，但聊天弹窗里消息列表空空如也；刷新几次后历史记录里还攒了一大堆重复的"用户问一句 + bot 空回复"。
+**根因**：页面初始化历史消息时，先从 localStorage 读出 history（已达 20 条上限），然后 forEach 调用 `appendMsg()` 逐条渲染。但 `appendMsg` 内部又会 `history.push()`，导致 history 瞬间翻倍到 40 条。每次 appendMsg 都触发 `history.length > MAX_HISTORY`，执行 `shift() + removeChild(msgList.firstChild)`——刚 appendChild 进去的消息，立刻又被当"最老的一条"删了。新消息同理：`appendMsg('user', text)` 加进去就被删，`appendMsg('bot', '')` 的 botDiv 也被从 DOM 里踢出去了，之后 `botDiv.textContent += piece` 只是在内存里改一个脱离文档树的节点，界面当然看不见。而且每次刷新都重复一遍 push 流程，localStorage 里的历史越攒越脏。
+**修复**：① 历史初始化和新增操作彻底分开，初始化直接渲染 DOM、不碰 history 数组；② 干脆不写 localStorage，历史纯内存存，刷新游戏自动重置——攻略助手本来就是单局辅助，不需要跨刷新保留对话。
+**教训**：一个函数如果有"副作用"（push 进数组、写 localStorage），就不能拿来做"纯渲染"。初始化渲染和新增操作应该分开两个函数。另外，对话历史这种临时状态，没必要持久化到 localStorage，内存存着就行，刷新重置反而是最干净的方案。
+
+---
+
 ## 2026-10-18 噬金虫冷却被多虫共享，二段伤害经常打不出
 
 **现象**：虫子数量一多，二段（飞行擦碰）伤害就几乎不掉血，看起来"经常打不出来"。

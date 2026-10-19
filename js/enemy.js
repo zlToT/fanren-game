@@ -721,12 +721,14 @@ export function createOrb(x, y, val) {
     g.beginFill(0x55aa77); g.drawCircle(0, 0, 4); g.endFill();
     g.beginFill(0x88cc99, 0.5); g.drawCircle(0, 0, 2); g.endFill();
     app.stage.addChild(g);
-    orb = { g, x: 0, y: 0, life: 900, val: 0 };
+    orb = { g, x: 0, y: 0, life: 900, val: 0, spawnDelay: 60, teleported: false };
   }
   orb.x = x;
   orb.y = y;
   orb.val = val;
   orb.life = 900;
+  orb.spawnDelay = 60; // 1秒后传送
+  orb.teleported = false;
   orb.g.position.set(x, y);
   return orb;
 }

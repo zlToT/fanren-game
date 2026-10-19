@@ -10,12 +10,14 @@ import { app, setApp, game, gameStarted, setGameStarted, curLevel, setCurLevel, 
 import { LEVELS, THEMES, STANCE_NAMES } from './config.js';
 import { initAudio, playSound, playFile, playBgm, playLevelBgm, tryStartBGM } from './audio.js';
 import { initBackground, setTheme, resizeBg } from './background.js';
+import { initBgImage, setBgTheme, showMenuBg } from './bg-image.js';
 import { burst, updateShake } from './fx.js';
 import { Sword, Bug, Lightning, Orbit, updateArcTriggers, findRandomEnemy } from './weapons.js';
 import { spawnEnemy, releaseOrb, startPoolWarmup, tickPoolWarmup, makeSpecialElite, pickType, getWave } from './enemy.js';
 import { BloodCloud, Shockwave, HomingOrb, CrescentBlade, LightningBolt, FullBeam, GoldenChain, FireWave, GiantHand } from './projectiles.js';
 import { toast, showUpgrade, getUpgradePool, getEvolutionOptions, autoUpgrade, endScreen, setupDBG, showSkillInfo } from './ui.js';
 import { tryDash, cycleStance, castThunder, initInput } from './input.js';
+import { initAIAssistant } from './ai-assistant.js';
 import { player } from './player.js';
 import { calcLevelUpBonus, calcNextExpNeed, PLAYER_BASE_ATK, calcHealAmount } from './calculate.js';
 import { updateBuffs, drawPlayerBuffBar, initBuffs, hasBuff } from './buff.js';
@@ -143,8 +145,11 @@ async function boot() {
 
   initAudio();
   initBackground();
+  initBgImage();
+  showMenuBg();
   setupDBG();
   initInput();
+  initAIAssistant();
   buildMenu();
 
   const btnBack = document.getElementById('btnBack');
@@ -186,6 +191,7 @@ function startLevel(idx) {
   document.getElementById('btnStance').style.display = 'block';
   document.getElementById('btnThunder').style.display = 'block';
   setTheme(curLevel.map);
+  setBgTheme(curLevel.map);
   resizeBg();
   initGame();
   setGameStarted(true);
@@ -371,10 +377,23 @@ function _loopBody(dt) {
   // Pickups
   game.orbs = game.orbs.filter(o => {
     o.life--;
+    // 出生延迟：先在原地停留0.5秒
+    if (o.spawnDelay > 0) {
+      o.spawnDelay--;
+      return true;
+    }
+    // 延迟结束后第一次触发：传送到玩家周围100-200距离
+    if (!o.teleported) {
+      o.teleported = true;
+      const ang = Math.random() * Math.PI * 2;
+      const dist = 100 + Math.random() * 100;
+      o.x = game.player.x + Math.cos(ang) * dist;
+      o.y = game.player.y + Math.sin(ang) * dist;
+    }
     const d = Math.hypot(game.player.x - o.x, game.player.y - o.y);
-    // ★ 经验球全屏拾取：所有经验球自动飞向玩家
-    o.x += (game.player.x - o.x) * 0.12;
-    o.y += (game.player.y - o.y) * 0.12;
+    // 加速飞向玩家：0.20插值比玩家移动快
+    o.x += (game.player.x - o.x) * 0.20;
+    o.y += (game.player.y - o.y) * 0.20;
     if (d < 16) {
       game.exp += o.val;
       playSound('pickup');
@@ -390,7 +409,7 @@ function _loopBody(dt) {
     if (p.life <= 0) { app.stage.removeChild(p.g); return false; }
     p.g.alpha = 0.6 + 0.4 * Math.sin(performance.now() * 0.008);
     const d = Math.hypot(game.player.x - p.x, game.player.y - p.y);
-    if (d < 160) { p.x += (game.player.x - p.x) * 0.12; p.y += (game.player.y - p.y) * 0.12; }
+    if (d < 150) { p.x += (game.player.x - p.x) * 0.2; p.y += (game.player.y - p.y) * 0.2; }
     if (d < 16) {
       const heal = calcHealAmount(curLevel?.dur || 780, game.time);
       game.hp = Math.min(game.maxHp, game.hp + heal);
