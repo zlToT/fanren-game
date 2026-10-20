@@ -16,7 +16,7 @@ export function initAIAssistant() {
 
   // 悬浮按钮
   const fab = document.createElement('button');
-  fab.textContent = '📖 攻略';
+  fab.textContent = '📖\nai助手';
   fab.style.cssText = `
     position: fixed; right: 16px; bottom: 80px; z-index: 9999;
     width: 64px; height: 64px; border-radius: 50%;

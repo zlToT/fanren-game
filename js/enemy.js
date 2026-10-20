@@ -120,6 +120,9 @@ export class Enemy {
       app.stage.addChild(this.gfx);
       this._isSpriteGfx = true;
     }
+    // ★ 视觉半高：Boss 贴图边长 r*4.2 → 半高 r*2.1；普通怪 Graphics 半径即 r
+    //   血条 / buff 图标 / 名字都贴这个顶边排，调 r 时自动跟着怪物体型走
+    this.visualHalfH = this._isSpriteGfx ? this.r * 2.1 : this.r;
     // 血条
     this.hpBar.clear();
     this.hpBar.visible = true;
@@ -135,7 +138,7 @@ export class Enemy {
       }
       this.nameText.text = s.bname;
       this.nameText.visible = true;
-      this.nameText.position.set(this.x, this.y - this.r - 30);
+      this.nameText.position.set(this.x, this.y - this.visualHalfH - 34);
     }
     // 重置 FSM
     this.fsm.state = null;
@@ -450,7 +453,7 @@ export class Enemy {
   // ★ 渲染：gfx 位置 / 名字 / buff 图标 / 血条（冰冻时也要跑，保持血条跟怪一体）
   render() {
     this.gfx.position.set(this.x, this.y);
-    if (this.nameText) this.nameText.position.set(this.x, this.y - this.r - 22);
+    if (this.nameText) this.nameText.position.set(this.x, this.y - this.visualHalfH - 22);
     // ★ 绘制敌人 buff 图标
     if (this.buffs && this.buffs.length > 0) drawEnemyBuffIcon(this);
     this.hpBar.clear();
@@ -460,11 +463,12 @@ export class Enemy {
     }
     if (this.hp < this.maxHp) {
       const w = this.isBoss ? this.r * 3 : this.r * 2;
+      const barY = this.y - this.visualHalfH - 8;
       this.hpBar.beginFill(0x000000, 0.6);
-      this.hpBar.drawRect(this.x - w / 2, this.y - this.r - 10, w, 3);
+      this.hpBar.drawRect(this.x - w / 2, barY, w, 3);
       this.hpBar.endFill();
       this.hpBar.beginFill(0xff3333);
-      this.hpBar.drawRect(this.x - w / 2, this.y - this.r - 10, w * Math.max(0, this.hp / this.maxHp), 3);
+      this.hpBar.drawRect(this.x - w / 2, barY, w * Math.max(0, this.hp / this.maxHp), 3);
       this.hpBar.endFill();
     }
     if (this.charging) {

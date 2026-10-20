@@ -367,7 +367,10 @@ export function clearBuffIcons() {
 // 绘制敌人身上的 buff 图标（大小为正常一半，位于头顶上方，不挡血条）
 export function drawEnemyBuffIcon(enemy) {
   if (!enemy.buffs || enemy.buffs.length === 0) return;
-  const ey = enemy.y - enemy.r - 24; // ★ 上移，不挡血条
+  // ★ 贴怪物视觉顶边排：Boss 贴图半高 visualHalfH=r*2.1，普通怪=r
+  //   顺序：怪头 → 血条(+8) → buff 图标(+22) → 名字(+34)
+  const halfH = enemy.visualHalfH || enemy.r;
+  const ey = enemy.y - halfH - 22;
   let offsetX = 0;
   for (const buff of enemy.buffs) {
     const def = BUFF_DEFS[buff.key];
