@@ -19,6 +19,7 @@ export const game = {
 
   // ===== 时间 / 游戏状态 =====
   time: 0,              // 本局已进行秒数
+  levelIdx: 0,          // ★ 记录当前关卡索引
   over: false,          // 游戏结束
   win: false,           // 是否通关
   paused: false,        // 是否暂停（升级弹窗/Boss 出场）
@@ -111,6 +112,10 @@ export const game = {
   hitFlash: 0,          // 受击闪屏强度
   bossSpawned: false,   // Boss 是否已刷
   bossSpawnTime: 0,     // Boss 出场时刻（秒），用于 1 分钟后停刷小怪
+
+  // ===== 触屏摇杆（手机端）=====
+  touchMoveX: 0,       // 摇杆水平方向 -1~1
+  touchMoveY: 0,       // 摇杆垂直方向 -1~1
 
   // ===== 调试 =====
   debug: { showHitbox: false, silent: false, noSpawn: false },

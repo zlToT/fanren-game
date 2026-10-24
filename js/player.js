@@ -6,6 +6,8 @@
 
 import { app, game, keys, playerGfx, playerDir, charTex, charReady, dashRing, stealthRing, setPlayerDirState, mxGlobal, myGlobal } from './state.js';
 import { hasBuff } from './buff.js';
+import { isMobile } from './touch.js';
+import { addTail, updateTails } from './fx.js';
 import * as PIXI from 'pixi.js';
 
 export class Player {
@@ -34,15 +36,26 @@ export class Player {
       game.dashTime -= dt;
       game.player.x += game.dashDirX * 14;
       game.player.y += game.dashDirY * 14;
+      // ★ 瞬身拖尾残影
+      this._tailFrame = (this._tailFrame || 0) + 1;
+      if (this._tailFrame % 2 === 0 && charReady && playerGfx._spr) {
+        addTail(game.player.x, game.player.y, playerGfx._spr.texture);
+      }
     } else if (!locked) {
       const spd = game.player.speed;
       game.player.x += mx * spd;
       game.player.y += my * spd;
     }
 
-    // 边界
-    game.player.x = Math.max(20, Math.min(app.screen.width - 20, game.player.x));
-    game.player.y = Math.max(20, Math.min(app.screen.height - 20, game.player.y));
+    // 边界：PC 端限制在屏幕内，手机端限制在世界内（世界=屏幕×2）
+    const sw = app.screen.width, sh = app.screen.height;
+    if (isMobile()) {
+      game.player.x = Math.max(20, Math.min(sw * 2 - 20, game.player.x));
+      game.player.y = Math.max(20, Math.min(sh * 2 - 20, game.player.y));
+    } else {
+      game.player.x = Math.max(20, Math.min(sw - 20, game.player.x));
+      game.player.y = Math.max(20, Math.min(sh - 20, game.player.y));
+    }
 
     // 位置同步到 PIXI
     playerGfx.position.set(game.player.x, game.player.y);

@@ -7,8 +7,8 @@
 import { audioCtx, setAudioCtx, audioBuffers, curLevel } from './state.js';
 
 const AUDIO_FILES = {
-  bg1: './audio/bg_1.ogg', bg2: './audio/bg_2.ogg', bg3: './audio/bg_3.ogg',
-  bg4: './audio/bg_4.ogg', bg5: './audio/bg_5.ogg', bgBoss: './audio/bg_boss.ogg',
+  bg1: './audio/bg_1.mp3', bg2: './audio/bg_2.mp3', bg3: './audio/bg_3.mp3',
+  bg4: './audio/bg_4.mp3', bg5: './audio/bg_5.mp3', bgBoss: './audio/bg_boss.mp3',
   over: './audio/over.mp3', uplv: './audio/uplv.mp3', hit: './audio/hit.mp3'
 };
 

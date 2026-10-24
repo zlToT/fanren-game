@@ -10,8 +10,8 @@ import { app, setApp, game, gameStarted, setGameStarted, curLevel, setCurLevel, 
 import { LEVELS, THEMES, STANCE_NAMES, MAX_ELITE_NUM } from './config.js';
 import { initAudio, playSound, playFile, playBgm, playLevelBgm, tryStartBGM } from './audio.js';
 import { initBackground, setTheme, resizeBg } from './background.js';
-import { initBgImage, setBgTheme, showMenuBg } from './bg-image.js';
-import { burst, updateShake } from './fx.js';
+import { initBgImage, setBgTheme, showMenuBg, updateBgCamera } from './bg-image.js';
+import { burst, updateShake, updateTails } from './fx.js';
 import { loadFxSpritesheet, updateFxSprites, playFx, playFxByTarget } from './sprite-fx.js';
 import { FX_CONFIG } from './const.js';
 import { Sword, Bug, Lightning, Orbit, updateArcTriggers, findRandomEnemy } from './weapons.js';
@@ -23,6 +23,7 @@ import { initAIAssistant } from './ai-assistant.js';
 import { player } from './player.js';
 import { calcLevelUpBonus, calcNextExpNeed, PLAYER_BASE_ATK, calcHealAmount } from './calculate.js';
 import { updateBuffs, drawPlayerBuffBar, initBuffs, hasBuff } from './buff.js';
+import { initTouch, getTouchMove, isMobile } from './touch.js';
 
 let playerAnimT = 0; // 保留兼容，实际动画在 player.js
 let dashCd = null, thunderCd = null;
@@ -152,6 +153,7 @@ async function boot() {
   loadFxSpritesheet(FX_CONFIG);
   setupDBG();
   initInput();
+  initTouch();
   initAIAssistant();
   buildMenu();
 
@@ -185,6 +187,7 @@ function buildMenu() {
 
 function startLevel(idx) {
   setCurLevel(LEVELS[idx]);
+  game.levelIdx = idx;
   sessionStorage.setItem('fanren_level', idx);
   ui.menu.style.display = 'none';
   ['ui', 'statsPanel', 'tip'].forEach(id => document.getElementById(id).style.display = 'block');
@@ -242,6 +245,7 @@ function initGame() {
   for (let i = 0; i < game.swordCount; i++) game.swords.push(new Sword(i));
 
   player.reset();
+  game._camInit = false; // ★ 每局重新初始化镜头跟随
 
   if (bgmStarted()) playLevelBgm();
 }
@@ -280,8 +284,13 @@ function _loopBody(dt) {
   if (keys['ArrowDown'] || keys['KeyS']) my += 1;
   if (keys['ArrowLeft'] || keys['KeyA']) mx -= 1;
   if (keys['ArrowRight'] || keys['KeyD']) mx += 1;
+  // ★ 合并手机端虚拟摇杆方向
+  const _touch = getTouchMove();
+  mx += _touch.x;
+  my += _touch.y;
   const moving = keys['ArrowUp'] || keys['KeyW'] || keys['ArrowDown'] || keys['KeyS'] ||
-    keys['ArrowLeft'] || keys['KeyA'] || keys['ArrowRight'] || keys['KeyD'];
+    keys['ArrowLeft'] || keys['KeyA'] || keys['ArrowRight'] || keys['KeyD'] ||
+    Math.abs(_touch.x) > 0.1 || Math.abs(_touch.y) > 0.1;
   if (moving) { game.idleTime = 0; game.idlePause = false; }
   else { game.idleTime += dt; if (game.idleTime > 7000 && !game.idlePause) { game.idlePause = true; game.paused = true; ui.panel.style.display = 'block'; ui.opts.innerHTML = '<h3>⏸ 静坐悟道</h3><p style="margin:12px 0;color:#bcd">你已经静立许久，继续修行？</p><button class="upgrade-btn" id="idleResumeBtn" style="text-align:center">继续前行</button>'; document.getElementById('idleResumeBtn').onclick = () => { game.paused = false; game.idlePause = false; game.idleTime = 0; ui.panel.style.display = 'none'; }; renderHUD(); return; } }
 
@@ -502,8 +511,41 @@ function _loopBody(dt) {
   game.time -= dt / 1000;
 
   updateShake(dt);
+  updateTails();
+
+  // ★ 手机端镜头跟随（马里奥模式：人钉屏幕中间，地图往后卷）
+  if (isMobile()) {
+    const sw = app.screen.width, sh = app.screen.height;
+    const worldW = sw * 2, worldH = sh * 2;
+    // 首次进入手机端对局，把玩家放到世界中心
+    if (!game._camInit) {
+      game.player.x = worldW / 2;
+      game.player.y = worldH / 2;
+      game._camInit = true;
+    }
+    let camX = game.player.x - sw / 2;
+    let camY = game.player.y - sh / 2;
+    // 镜头边界：不让屏幕露出地图外
+    camX = Math.max(0, Math.min(worldW - sw, camX));
+    camY = Math.max(0, Math.min(worldH - sh, camY));
+    // 游戏世界偏移（敌人、子弹、玩家都跟着移）
+    app.stage.position.set(-camX, -camY);
+    // 背景图也跟着偏移（CSS 背景不在 stage 里，单独移）
+    updateBgCamera(camX, camY, worldW, worldH);
+    // 存下来给怪物生成用（刷在屏幕外）
+    game.camX = camX;
+    game.camY = camY;
+  } else {
+    app.stage.position.set(0, 0);
+  }
+
   renderHUD();
 }
+
+// ★ HUD 刷新计时器（避免每帧 DOM 操作）
+let _hudTimer = 0;
+let _fastTimer = 0;  // 0.3 秒刷新（CD 条、Boss 血条）
+let _bossRef = null;
 
 function renderHUD() {
   ui.hp.style.width = Math.max(0, game.hp / game.maxHp * 100) + '%';
@@ -511,37 +553,51 @@ function renderHUD() {
   ui.thunder.style.width = game.thunderCharge + '%';
   const mm = Math.floor(Math.max(0, game.time) / 60);
   const ss = Math.floor(Math.max(0, game.time)) % 60;
-  if (ui.hpTxt) ui.hpTxt.textContent = `血量 ${Math.ceil(game.hp)}/${game.maxHp}`;
-  if (ui.expTxt) ui.expTxt.textContent = `等级 ${game.lv} · 经验`;
-  if (ui.thunderTxt) ui.thunderTxt.textContent = `雷源 ${Math.floor(game.thunderCharge)}%${game.thunderCD > 0 ? `（CD ${(game.thunderCD / 1000).toFixed(1)}s）` : ''}`;
-  ui.uiStats.innerHTML = `${curLevel.name} ｜ ⏱ ${mm}:${ss.toString().padStart(2, '0')} ｜ 击杀 ${game.kills} ｜ 总伤害 ${Math.floor(game.dmgDealt)}<br>${STANCE_NAMES[game.swordStance]}`;
 
-  if (dashCd) dashCd.style.height = (game.dashCD > 0 ? Math.min(100, game.dashCD / (game.dashCDMax || 8000) * 100) : 0) + '%';
-  if (thunderCd) thunderCd.style.height = (game.thunderCD > 0 ? Math.min(100, game.thunderCD / 10000 * 100) : Math.max(0, 100 - game.thunderCharge)) + '%';
+  // ★ 每 1 秒刷新一次文字统计（总伤害、击杀、时间）
+  _hudTimer += 16.7;
+  if (_hudTimer >= 1000) {
+    _hudTimer = 0;
+    ui.uiStats.innerHTML = `${curLevel.name} ｜ ⏱ ${mm}:${ss.toString().padStart(2, '0')} ｜ 击杀 ${game.kills} ｜ 总伤害 ${Math.floor(game.dmgDealt)}<br>${STANCE_NAMES[game.swordStance]}`;
 
-  // Stats panel
-  let sp = `<div style="color:#ffd766">${curLevel.name}</div>`;
-  for (const w in game.weapons) {
-    const wd = game.weapons[w];
-    const max = WEAPON_DEFS_MAX_LV[w] || 5;
-    const tag = wd.level >= max ? '<span style="color:#ffd700">(Max)</span>' : '';
-    sp += `${wd.evolved ? '<span style="color:#f08cf0">★</span>' : ''}${w} Lv${wd.level}${tag}<br>`;
+    // Stats panel 也 1 秒刷新一次
+    let sp = `<div style="color:#ffd766">${curLevel.name}</div>`;
+    for (const w in game.weapons) {
+      const wd = game.weapons[w];
+      const max = WEAPON_DEFS_MAX_LV[w] || 5;
+      const tag = wd.level >= max ? '<span style="color:#ffd700">(Max)</span>' : '';
+      sp += `${wd.evolved ? '<span style="color:#f08cf0">★</span>' : ''}${w} Lv${wd.level}${tag}<br>`;
+    }
+    ui.statsPanel.innerHTML = sp;
   }
-  ui.statsPanel.innerHTML = sp;
 
-  // Boss HP bar
-  const boss = game.enemies.find(e => e.isBoss && !e.dead);
-  if (boss) {
-    const w = app.screen.width * 0.6, x0 = (app.screen.width - w) / 2, y0 = 14;
-    playerHpBar.beginFill(0x000000, 0.7); playerHpBar.drawRect(x0 - 2, y0 - 2, w + 4, 16); playerHpBar.endFill();
-    playerHpBar.beginFill(0x550000); playerHpBar.drawRect(x0, y0, w, 12); playerHpBar.endFill();
-    playerHpBar.beginFill(0xff2244); playerHpBar.drawRect(x0, y0, w * Math.max(0, boss.hp / boss.maxHp), 12); playerHpBar.endFill();
-    game.bossHpText.visible = true;
-    game.bossHpText.position.set(app.screen.width / 2, y0 + 16);
-    game.bossHpText.text = `${curLevel.bossName}  ${Math.ceil(boss.hp)} / ${boss.maxHp}`;
-  } else {
-    playerHpBar.clear();
-    game.bossHpText.visible = false;
+  // ★ 每 0.3 秒刷新一次 CD 条、Boss 血条、状态文字
+  _fastTimer += 16.7;
+  if (_fastTimer >= 300) {
+    _fastTimer = 0;
+    if (dashCd) dashCd.style.height = (game.dashCD > 0 ? Math.min(100, game.dashCD / (game.dashCDMax || 8000) * 100) : 0) + '%';
+    if (thunderCd) thunderCd.style.height = (game.thunderCD > 0 ? Math.min(100, game.thunderCD / 10000 * 100) : Math.max(0, 100 - game.thunderCharge)) + '%';
+    if (ui.hpTxt) ui.hpTxt.textContent = `血量 ${Math.ceil(game.hp)}/${game.maxHp}`;
+    if (ui.expTxt) ui.expTxt.textContent = `等级 ${game.lv} · 经验`;
+    if (ui.thunderTxt) ui.thunderTxt.textContent = `雷源 ${Math.floor(game.thunderCharge)}%${game.thunderCD > 0 ? `（CD ${(game.thunderCD / 1000).toFixed(1)}s）` : ''}`;
+
+    // Boss HP bar
+    if (!_bossRef || _bossRef.dead) {
+      _bossRef = game.enemies.find(e => e.isBoss && !e.dead) || null;
+    }
+    if (_bossRef) {
+      const w = app.screen.width * 0.6, x0 = (app.screen.width - w) / 2, y0 = 14;
+      playerHpBar.clear();
+      playerHpBar.beginFill(0x000000, 0.7); playerHpBar.drawRect(x0 - 2, y0 - 2, w + 4, 16); playerHpBar.endFill();
+      playerHpBar.beginFill(0x550000); playerHpBar.drawRect(x0, y0, w, 12); playerHpBar.endFill();
+      playerHpBar.beginFill(0xff2244); playerHpBar.drawRect(x0, y0, w * Math.max(0, _bossRef.hp / _bossRef.maxHp), 12); playerHpBar.endFill();
+      game.bossHpText.visible = true;
+      game.bossHpText.position.set(app.screen.width / 2, y0 + 16);
+      game.bossHpText.text = `${curLevel.bossName}  ${Math.ceil(_bossRef.hp)} / ${_bossRef.maxHp}`;
+    } else {
+      playerHpBar.clear();
+      game.bossHpText.visible = false;
+    }
   }
 
   // Win/lose

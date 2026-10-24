@@ -18,10 +18,10 @@ export function initAIAssistant() {
   const fab = document.createElement('button');
   fab.textContent = '📖\nai助手';
   fab.style.cssText = `
-    position: fixed; right: 16px; bottom: 80px; z-index: 9999;
-    width: 64px; height: 64px; border-radius: 50%;
+    position: fixed; right: 16px; bottom: 20px; z-index: 9999;
+    width: 56px; height: 56px; border-radius: 50%;
     background: linear-gradient(135deg, #2d5a3d, #4a7c59);
-    color: #ffe9a8; font-size: 13px; font-weight: bold;
+    color: #ffe9a8; font-size: 11px; font-weight: bold;
     border: 2px solid #c9a84c; cursor: pointer;
     box-shadow: 0 4px 16px rgba(45,90,61,0.6);
     animation: breath 2.5s ease-in-out infinite;

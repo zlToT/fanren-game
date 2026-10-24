@@ -161,6 +161,8 @@ export const ENEMY_STATS = {
 // 精英怪最多同屏数量
 export const MAX_ELITE_NUM = 15
 
+// 关卡伤害后期平衡对boss生效 隐藏机制
+export const LEVELS_BOSS_DMG_ADD = [1.1, 1.3, 1.5, 2.0, 2.5];
 
 
 // ===== 弹幕/对象池常量 =====

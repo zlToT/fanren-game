@@ -13,6 +13,9 @@ import { calcLevelUpBonus, calcHealAmount } from './calculate.js';
 import { GAME_STATUS_LATE } from './const.js'
 
 let toastTimer = null;
+
+// ★ 进化模式开关状态（模块级，不随 GM 面板刷新重置）
+let evolveMode = false;
 export function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.style.opacity = 1;
@@ -237,6 +240,18 @@ export function setupDBG() {
     refreshList() {
       if (!curLevel) return;
       const wDiv = document.getElementById('dbgWeapons');
+      // ★ 进化模式开关（手机端代替 Shift）
+      const evBtn = document.getElementById('dbtnEvolveMode');
+      if (evBtn) {
+        evBtn.innerText = `进化模式:${evolveMode ? '开' : '关'}`;
+        evBtn.style.background = evolveMode ? '#a06bff' : '#6b3fa0';
+        evBtn.onclick = () => {
+          evolveMode = !evolveMode;
+          evBtn.innerText = `进化模式:${evolveMode ? '开' : '关'}`;
+          evBtn.style.background = evolveMode ? '#a06bff' : '#6b3fa0';
+        };
+      }
+
       if (wDiv) {
         wDiv.innerHTML = '';
         for (const name of curLevel.weapons) {
@@ -244,7 +259,13 @@ export function setupDBG() {
           const max = WEAPON_DEFS[name].maxLv;
           const b = document.createElement('span'); b.className = 'dbtn';
           b.innerText = `${name}(${lv}${lv >= max ? ' Max' : ''})`;
-          b.onclick = (ev) => { ev.shiftKey ? window.DBG.evolveWeapon(name) : window.DBG.addWeapon(name); };
+          b.onclick = (ev) => {
+            if (ev.shiftKey || evolveMode) {
+              window.DBG.evolveWeapon(name);
+            } else {
+              window.DBG.addWeapon(name);
+            }
+          };
           wDiv.appendChild(b);
         }
       }
@@ -296,6 +317,9 @@ export function setupDBG() {
         <span class="dbtn" onclick="DBG.levelUp(5)">连升5级</span>
       </div>
       <h4>⚔️ 武器（Shift+点击=满级+进化）</h4>
+      <div class="row">
+        <span class="dbtn" id="dbtnEvolveMode" style="background:#6b3fa0">进化模式:关</span>
+      </div>
       <div class="row" id="dbgWeapons"></div>
       <h4>🧬 被动</h4>
       <div class="row" id="dbgPassives"></div>

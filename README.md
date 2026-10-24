@@ -3,7 +3,6 @@
 > 一款基于《凡人修仙传》世界观的放置生存 Roguelite 割草游戏。
 > 你是一名初入仙途的小修，在血色禁地、坠魔谷、幽冥暗渊等秘境中求生，一路斩妖除魔，最终直面九天仙庭的真仙。
 
-
 ![1792497083353](images/README/1792497083353.png)
 
 ![1792497109301](images/README/1792497109301.png)
@@ -13,7 +12,7 @@
 - **开发模式**：AI 辅助工作流（Claude Code / Codex + 人工架构决策）
 - **技术栈**：JavaScript / Pixi.js 7.4 / Web Audio API / Vite 8 ES Modules
 - **架构**：多文件模块化（config / state / player / weapons / enemy / projectiles / skills / fx / ui / audio / background / calculate / main）
-- **音效**：程序合成音效（Web Audio API）+ 文件 BGM（Ogg）
+- **音效**：程序合成音效（Web Audio API）+ 文件 BGM（mp3）
 - **平台**：桌面浏览器（PC 键盘操作）
 
 ---

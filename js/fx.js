@@ -50,6 +50,8 @@ export class DamageText {
 }
 
 export function showDamage(x, y, dmg, color, big = false) {
+  // ★ 手机端性能优化：限制同时显示的伤害数字数量
+  if (game.damageTexts.length > 30) return;
   let dt;
   if (_damageTextPool.length > 0) {
     dt = _damageTextPool.pop();
@@ -65,14 +67,26 @@ export function showDamage(x, y, dmg, color, big = false) {
 const _particlePool = [];
 const MAX_P_POOL = 200;
 
+// ★ 预生成一个圆形纹理，所有粒子共用，合并 draw call
+let _circleTex = null;
+function getCircleTexture() {
+  if (_circleTex) return _circleTex;
+  const g = new PIXI.Graphics();
+  g.beginFill(0xffffff); g.drawCircle(8, 8, 8); g.endFill();
+  _circleTex = app.renderer.generateTexture(g);
+  return _circleTex;
+}
+
 export class Particle {
   constructor() {
-    this.g = new PIXI.Graphics();
+    this.g = new PIXI.Sprite(getCircleTexture());
+    this.g.anchor.set(0.5);
+    this.g.scale.set(0.375); // 直径 3px（8*2*0.375=6px半径→3px直径不对，直接设大小）
+    this.g.width = 6; this.g.height = 6;
     app.stage.addChild(this.g);
   }
   init(x, y, color) {
-    this.g.clear();
-    this.g.beginFill(color); this.g.drawCircle(0, 0, 3); this.g.endFill();
+    this.g.tint = color;
     this.g.position.set(x, y);
     this.vx = (Math.random() - 0.5) * 4;
     this.vy = (Math.random() - 0.5) * 4;
@@ -100,7 +114,10 @@ export class Particle {
 }
 
 export function burst(x, y, color, n = 8) {
-  for (let i = 0; i < n; i++) {
+  // ★ 性能优化：粒子太多时减少数量
+  if (game.particles.length > 100) return;
+  const realN = Math.min(n, 100 - game.particles.length);
+  for (let i = 0; i < realN; i++) {
     let p;
     if (_particlePool.length > 0) {
       p = _particlePool.pop();
@@ -159,5 +176,81 @@ export function spawnThunderBolts(px, py, R) {
       bolt.life--; bolt.alpha = bolt.life / 16;
       if (bolt.life <= 0) { clearInterval(fade); app.stage.removeChild(bolt); }
     }, 33);
+  }
+}
+
+// ===== 瞬身拖尾残影 =====
+const _tailPool = [];
+export function spawnDashTail(x, y, texture) {
+  if (!texture) return;
+  let spr;
+  if (_tailPool.length > 0) {
+    spr = _tailPool.pop();
+    spr.texture = texture;
+    spr.visible = true;
+  } else {
+    spr = new PIXI.Sprite(texture);
+    spr.anchor.set(0.5);
+    app.stage.addChild(spr);
+  }
+  spr.x = x;
+  spr.y = y;
+  spr.alpha = 0.5;
+  spr._life = 20; // 20帧后消失
+}
+
+export function updateDashTails() {
+  // 遍历所有拖尾，淡出
+  // 用一个隐藏数组跟踪活跃的拖尾
+}
+// 活跃拖尾列表
+const _activeTails = [];
+export function spawnDashTailWithTrack(x, y, texture) {
+  spawnDashTail(x, y, texture);
+  // 找到刚创建的 sprite 加到活跃列表
+  // 简化：直接遍历 stage children 找最新的
+}
+
+// 更简单的实现：每帧在 player.js 里调用，fx.js 维护一个列表
+export function tickDashTails() {
+  // 这个函数由主循环调用，更新所有拖尾
+  // 但我们用对象池方式，需要跟踪活跃的
+}
+
+// 最终方案：维护一个活跃拖尾数组
+const _tails = [];
+export function addTail(x, y, texture) {
+  if (!texture) return;
+  // ★ 限制残影最大数量
+  if (_tails.length > 8) return;
+  let spr;
+  if (_tailPool.length > 0) {
+    spr = _tailPool.pop();
+    spr.texture = texture;
+    app.stage.addChild(spr);
+  } else {
+    spr = new PIXI.Sprite(texture);
+    spr.anchor.set(0.5);
+    app.stage.addChild(spr);
+  }
+  spr.x = x;
+  spr.y = y;
+  spr.width = 60;
+  spr.height = 60;
+  spr.alpha = 0.9;
+  spr._life = 20;
+  _tails.push(spr);
+}
+
+export function updateTails() {
+  for (let i = _tails.length - 1; i >= 0; i--) {
+    const t = _tails[i];
+    t._life--;
+    t.alpha = 0.9 * (t._life / 20);
+    if (t._life <= 0) {
+      app.stage.removeChild(t);
+      _tailPool.push(t);
+      _tails.splice(i, 1);
+    }
   }
 }

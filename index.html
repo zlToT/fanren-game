@@ -7,6 +7,12 @@
   <link rel="icon" href="./favicon.ico" type="image/x-icon">
   <title>凡人·秘境苟道【关卡版】</title>
   <link rel="stylesheet" href="./css/style.css">
+  <script>
+    // 立即检测触屏设备，加 html.mobile class（不等 main.js 加载，菜单页就能生效）
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      document.documentElement.classList.add('mobile');
+    }
+  </script>
 </head>
 
 <body>
@@ -36,8 +42,8 @@
     <h1>凡人 · 秘境苟道</h1>
     <div class="subtitle">— 一把青元剑，苟过九重天 —</div>
     <div class="howto">
-      <b>操作</b>：WASD/方向键移动 ｜ <b>空格</b> 瞬身（无敌2秒） ｜ <b>Q</b> 切换剑式 ｜ <b>E</b> 辟邪神雷<br>
-      飞剑自动护主：护身 / 追击 / 分组追击三种剑式。原地7秒进入隐匿（全局暂停）。<br>
+      <b class="pc-hint">操作</b><span class="pc-hint">：WASD/方向键移动 ｜ <b>空格</b> 瞬身（无敌2秒） ｜ <b>Q</b> 切换剑式 ｜ <b>E</b> 辟邪神雷</span><br>
+      飞剑自动护主：护身 / 追击 / 分组追击三种剑式。<br>原地7秒进入隐匿（全局暂停）。<br>
       <span class="tip1">【九霄神雷、辟邪神雷】对魔修造成 50% 额外伤害</span><br>
       <span class="tip2">【噬金虫】全屏追噬，接触造成伤害</span><br>
       击杀积攒<b>雷源</b>，满了可以释放辟邪神雷清屏。击败首领即可通关！

@@ -7,9 +7,10 @@
 
 import * as PIXI from 'pixi.js';
 import { app, game, curLevel, IMG_TEX } from './state.js';
-import { ENEMY_STATS, MAX_BULLETS, ELITE_BEHAVIORS } from './config.js';
+import { ENEMY_STATS, MAX_BULLETS, ELITE_BEHAVIORS, LEVELS_BOSS_DMG_ADD } from './config.js';
 import { playSound, playHitSound } from './audio.js';
 import { burst, showDamage, shake, playerHurt } from './fx.js';
+import { isMobile } from './touch.js';
 import { createProjectile, BloodCloud, Shockwave, HomingOrb, CrescentBlade, GiantHand, GoldenChain, FireWave } from './projectiles.js';
 import { findEnemyInRange } from './weapons.js';
 import { toast, showSkillInfo } from './ui.js';
@@ -92,12 +93,24 @@ export class Enemy {
     this.dmgBuff = 1;
     this.buffTimer = 0;
     this.auraOn = false;
-    // 随机出生位置（屏幕边缘）
-    const side = Math.floor(Math.random() * 4);
-    if (side === 0) { this.x = Math.random() * app.screen.width; this.y = -30; }
-    else if (side === 1) { this.x = app.screen.width + 30; this.y = Math.random() * app.screen.height; }
-    else if (side === 2) { this.x = Math.random() * app.screen.width; this.y = app.screen.height + 30; }
-    else { this.x = -30; this.y = Math.random() * app.screen.height; }
+    // 随机出生位置
+    if (isMobile()) {
+      // ★ 手机端：刷在屏幕边缘外（考虑镜头偏移），再走进来
+      const sw = app.screen.width, sh = app.screen.height;
+      const camX = game.camX || 0, camY = game.camY || 0;
+      const side = Math.floor(Math.random() * 4);
+      if (side === 0) { this.x = camX + Math.random() * sw; this.y = camY - 30; }
+      else if (side === 1) { this.x = camX + sw + 30; this.y = camY + Math.random() * sh; }
+      else if (side === 2) { this.x = camX + Math.random() * sw; this.y = camY + sh + 30; }
+      else { this.x = camX - 30; this.y = camY + Math.random() * sh; }
+    } else {
+      // PC 端：从屏幕边缘生成
+      const side = Math.floor(Math.random() * 4);
+      if (side === 0) { this.x = Math.random() * app.screen.width; this.y = -30; }
+      else if (side === 1) { this.x = app.screen.width + 30; this.y = Math.random() * app.screen.height; }
+      else if (side === 2) { this.x = Math.random() * app.screen.width; this.y = app.screen.height + 30; }
+      else { this.x = -30; this.y = Math.random() * app.screen.height; }
+    }
     // 重绘画 body
     if (this._isSpriteGfx) {
       // 之前用的是 Sprite（Boss 图片），换回 Graphics
@@ -358,13 +371,18 @@ export class Enemy {
   }
   hurt(dmg, color, big = false) {
     if (this.dead) return;
-    const real = dmg;
+    let real = dmg;
+    if (this.isBoss) {
+      real *= LEVELS_BOSS_DMG_ADD[game.levelIdx || 0]
+    }
+
     this.hp -= real;
     game.dmgDealt += real;
     showDamage(this.x, this.y, real, color, big);
+    this._hpBarTimer = 999; // ★ 受伤后立刻刷新血条，不等节流
     const dx = this.x - game.player.x, dy = this.y - game.player.y;
     const d = Math.hypot(dx, dy) || 1;
-    const kb = (this.isBoss || this.type === 'tank') ? 0.32 : 3;
+    const kb = (this.isBoss || this.type === 'tank') ? 0 : 3; // ★ Boss 不受击退
     this.x += dx / d * kb;
     this.y += dy / d * kb;
     if (this.hp <= 0) this.destroy();
@@ -395,13 +413,19 @@ export class Enemy {
         this.moveToward(px, py, this.spd);
       }
       if (this.auraOn && this.auraGfx) {
-        this.auraGfx.clear();
-        const c = this.behavior === 'boss5' ? 0xffd700 : 0x881111;
-        this.auraGfx.beginFill(c, 0.15);
-        this.auraGfx.drawCircle(this.x, this.y, 220);
-        this.auraGfx.endFill();
-        this.auraGfx.lineStyle(2, c, 0.6);
-        this.auraGfx.drawCircle(this.x, this.y, 220);
+        // ★ aura 节流：position 每帧跟随，内容 0.3 秒重绘一次
+        this.auraGfx.position.set(this.x, this.y);
+        this._auraTimer = (this._auraTimer || 0) + dt;
+        if (this._auraTimer >= 300) {
+          this._auraTimer = 0;
+          this.auraGfx.clear();
+          const c = this.behavior === 'boss5' ? 0xffd700 : 0x881111;
+          this.auraGfx.beginFill(c, 0.15);
+          this.auraGfx.drawCircle(0, 0, 220);
+          this.auraGfx.endFill();
+          this.auraGfx.lineStyle(2, c, 0.6);
+          this.auraGfx.drawCircle(0, 0, 220);
+        }
         // aura tick 掉血：0.3s 一次
         this.auraHitTimer = (this.auraHitTimer || 0) - dt;
         if (d < 220 && this.auraHitTimer <= 0) {
@@ -454,26 +478,35 @@ export class Enemy {
   render() {
     this.gfx.position.set(this.x, this.y);
     if (this.nameText) this.nameText.position.set(this.x, this.y - this.visualHalfH - 22);
+
+    // ★ 血条节流：position 每帧跟随，内容每 0.3 秒才重绘
+    const barOffsetY = -this.visualHalfH - 8;
+    this.hpBar.position.set(this.x, this.y);
+
+    this._hpBarTimer = (this._hpBarTimer || 0) + 16.7;
+    if (this._hpBarTimer < 300 && this._hpDrawn) return;
+    this._hpBarTimer = 0;
+    this._hpDrawn = true;
+
     // ★ 绘制敌人 buff 图标
     if (this.buffs && this.buffs.length > 0) drawEnemyBuffIcon(this);
     this.hpBar.clear();
     if (game.debug.showHitbox) {
       this.hpBar.lineStyle(1, 0x00ff00, 0.5);
-      this.hpBar.drawCircle(this.x, this.y, this.r);
+      this.hpBar.drawCircle(0, 0, this.r);
     }
     if (this.hp < this.maxHp) {
       const w = this.isBoss ? this.r * 3 : this.r * 2;
-      const barY = this.y - this.visualHalfH - 8;
       this.hpBar.beginFill(0x000000, 0.6);
-      this.hpBar.drawRect(this.x - w / 2, barY, w, 3);
+      this.hpBar.drawRect(-w / 2, barOffsetY, w, 3);
       this.hpBar.endFill();
       this.hpBar.beginFill(0xff3333);
-      this.hpBar.drawRect(this.x - w / 2, barY, w * Math.max(0, this.hp / this.maxHp), 3);
+      this.hpBar.drawRect(-w / 2, barOffsetY, w * Math.max(0, this.hp / this.maxHp), 3);
       this.hpBar.endFill();
     }
     if (this.charging) {
       this.hpBar.lineStyle(2, 0xff4400, 0.7);
-      this.hpBar.drawCircle(this.x, this.y, this.r + 4);
+      this.hpBar.drawCircle(0, 0, this.r + 4);
     }
   }
   // ★ Boss AI（从 update 抽出，后续可拆成 FSM 各阶段 State）
@@ -637,6 +670,8 @@ export class Enemy {
           this.skill3Timer = (this.skill3Timer || 13000) - dt;
           if (this.skill3Timer <= 0) {
             this.skill3Timer = 13000;
+            // ★ 限制召唤数量，防止敌人无限攒导致闪退
+            if (game.enemies.length >= 60) break;
             const giants = game.enemies.filter(e => !e.dead && e.isBloodGiant).length;
             if (giants < 2) {
               const g = spawnEnemy('tank'); g.isBloodGiant = true; g.r = 30;

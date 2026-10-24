@@ -69,6 +69,12 @@ export function calcBugDmg(lv, playerAtk, isEvolved, dmgMul, isCollision = false
 
   let total = dmg + playerAtk;
   if (isCollision) total *= 0.5; // 碰撞半伤
+
+  // 加强下
+  if (Math.random() < 0.5) {
+    total *= 2
+  }
+
   // console.log('噬金虫伤害', lv, playerAtk, isEvolved, dmgMul, isCollision, total * dmgMul)
   return total * dmgMul;
 }
@@ -87,6 +93,12 @@ export function calcLightningDmg(lv, playerAtk, isEvolved, isMo, dmgMul) {
   if (isEvolved) dmg *= 2; // 进化翻倍
   let total = dmg + playerAtk * 2; // 附加玩家攻击力×1.5
   if (isMo) total *= FACTION_MO_DMG_BONUS; // 魔修加成
+
+  // 加强下
+  if (Math.random() < 0.5) {
+    total *= 2
+  }
+
   // console.log('九霄神雷伤害', lv, playerAtk, isEvolved, isMo, dmgMul, total * dmgMul)
   return total * dmgMul;
 }
